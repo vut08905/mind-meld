@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mind Meld — Thần Giao Cách Cảm</title>
+  <meta name="description" content="Game Thần Giao Cách Cảm — 2 người chơi cố gắng nghĩ ra cùng một từ. Test độ hiểu nhau ngay!">
+  <meta name="theme-color" content="#0a0a1a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Background Particles -->
+  <div class="bg-particles">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Player Left Overlay -->
+  <div id="overlay-player-left" class="overlay">
+    <div class="overlay-content">
+      <h2>😢 Đối thủ đã rời đi</h2>
+      <p>Đối thủ đã ngắt kết nối hoặc rời phòng.</p>
+      <button class="btn btn-primary btn-block" onclick="goHome()">🏠 Về Trang Chủ</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SCREEN: HOME                           -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-home" class="screen active">
+      <div class="logo">
+        <div class="logo-icon">🧠</div>
+        <h1>Mind Meld</h1>
+        <p class="subtitle">Thần Giao Cách Cảm</p>
+      </div>
+
+      <div class="card">
+        <div class="input-group">
+          <label for="player-name">Tên của bạn</label>
+          <input type="text" id="player-name" class="input" placeholder="Nhập tên..." maxlength="20" autocomplete="off">
+        </div>
+
+        <div class="btn-group">
+          <button id="btn-create" class="btn btn-primary" onclick="createRoom()">
+            🎮 Tạo Phòng
+          </button>
+          <button id="btn-join-toggle" class="btn btn-secondary" onclick="toggleJoinInput()">
+            🚪 Tham Gia
+          </button>
+        </div>
+
+        <div id="join-section" style="display: none; margin-top: 16px;">
+          <div class="input-group">
+            <label for="room-code-input">Mã phòng</label>
+            <input type="text" id="room-code-input" class="input input-large" placeholder="_ _ _ _" maxlength="4" autocomplete="off">
+          </div>
+          <button class="btn btn-success btn-block" onclick="joinRoom()">
+            🚀 Vào Phòng
+          </button>
+        </div>
+      </div>
+
+      <details class="how-to-play">
+        <summary>📖 Cách chơi</summary>
+        <div class="steps">
+          <div class="step">
+            <span class="step-num">1</span>
+            <span>Tạo phòng và gửi mã cho bạn bè, hoặc nhập mã phòng để tham gia.</span>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <span><strong>Vòng 1:</strong> Mỗi người nghĩ 1 từ hoàn toàn ngẫu nhiên trong đầu rồi gửi.</span>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <span><strong>Vòng 2+:</strong> Nhìn 2 từ của vòng trước, nghĩ 1 từ là <strong>điểm giao</strong> giữa chúng.</span>
+          </div>
+          <div class="step">
+            <span class="step-num">4</span>
+            <span>Cả 2 cùng nghĩ ra 1 từ giống nhau = <strong>🧠 Mind Meld!</strong> Thắng cuộc! 🎉</span>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SCREEN: WAITING ROOM                   -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-waiting" class="screen">
+      <div class="logo">
+        <div class="logo-icon">⏳</div>
+        <h1 style="font-size: 1.8rem;">Chờ Đối Thủ</h1>
+      </div>
+
+      <div class="card">
+        <p class="card-title" style="text-align: center;">Mã phòng</p>
+        <div id="room-code-display" class="room-code-display">
+          <!-- Letters injected by JS -->
+        </div>
+        <div class="copy-group" style="justify-content: center;">
+          <button id="btn-copy-code" class="copy-btn" onclick="copyRoomCode()">📋 Copy mã</button>
+          <button id="btn-copy-link" class="copy-btn" onclick="copyShareLink()">🔗 Copy link</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <ul id="players-list" class="players-list">
+          <!-- Injected by JS -->
+        </ul>
+      </div>
+
+      <button class="btn btn-danger btn-block" style="margin-top: 16px;" onclick="leaveRoom()">
+        🚪 Rời Phòng
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SCREEN: GAME                           -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-game" class="screen">
+      <div class="game-header">
+        <div class="round-badge">
+          🔄 Vòng <span id="round-number">1</span>
+        </div>
+        <div class="players-vs">
+          <span id="player1-name">—</span> vs <span id="player2-name">—</span>
+        </div>
+      </div>
+
+      <!-- Sub-state: INPUT WORD -->
+      <div id="state-input" class="card slide-up" style="display: none;">
+        <div id="previous-words-container">
+          <!-- Previous words shown here for round 2+ -->
+        </div>
+
+        <p id="prompt-text" class="prompt-text">
+          💭 Nghĩ một từ <span class="highlight">BẤT KỲ</span> trong đầu bạn!
+        </p>
+
+        <div class="word-input-section">
+          <input type="text" id="word-input" class="input" placeholder="Nhập từ của bạn..." maxlength="50" autocomplete="off">
+        </div>
+
+        <button id="btn-submit" class="btn btn-primary btn-block" style="margin-top: 16px;" onclick="submitWord()">
+          🚀 Gửi Từ
+        </button>
+
+        <div id="timer" class="timer">
+          ⏱️ <span id="timer-value">30</span>
+        </div>
+      </div>
+
+      <!-- Sub-state: WAITING FOR OPPONENT -->
+      <div id="state-waiting" class="card" style="display: none;">
+        <div class="waiting-state">
+          <div class="checkmark">✅</div>
+          <h3>Bạn đã gửi từ!</h3>
+          <p style="color: var(--text-secondary); margin-top: 8px;">Đang chờ đối thủ...</p>
+          <div class="loading-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-state: ROUND RESULT (miss) -->
+      <div id="state-result" class="card" style="display: none;">
+        <div class="result-state">
+          <div class="result-badge miss">❌ Chưa khớp!</div>
+
+          <div class="previous-words">
+            <div class="word-card you">
+              <div id="result-word1" class="word">—</div>
+              <div id="result-name1" class="player-name">—</div>
+            </div>
+            <div class="words-connector">↔</div>
+            <div class="word-card opponent">
+              <div id="result-word2" class="word">—</div>
+              <div id="result-name2" class="player-name">—</div>
+            </div>
+          </div>
+
+          <p class="encourage-text">Cố gắng lên! Thử lại nào 💪</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SCREEN: WIN                            -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-win" class="screen">
+      <div class="win-screen">
+        <div class="win-title">🎉🧠 MIND MELD! 🧠🎉</div>
+        <div id="win-word" class="win-word">—</div>
+        <p class="win-stats">
+          Cả 2 cùng nghĩ một từ! 🏆<br>
+          Hoàn thành trong <strong id="win-rounds">0</strong> vòng
+        </p>
+
+        <div class="history-section">
+          <p class="history-title">📜 Lịch sử các vòng</p>
+          <div id="history-list">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <div class="btn-group" style="margin-top: 20px;">
+          <button class="btn btn-success" onclick="playAgain()">🔄 Chơi Lại</button>
+          <button class="btn btn-secondary" onclick="goHome()">🏠 Về Trang Chủ</button>
+        </div>
+
+        <div id="rematch-status" class="rematch-waiting" style="display: none;">
+          ⏳ Đang chờ đối thủ đồng ý chơi lại...
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/confetti.js"></script>
+  <script src="/js/game.js"></script>
+</body>
+</html>
