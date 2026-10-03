@@ -1,0 +1,21 @@
+{
+  "name": "mind-meld",
+  "version": "1.0.0",
+  "description": "Mind Meld - Thần Giao Cách Cảm multiplayer word game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["game", "multiplayer", "word-game", "socket.io"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
